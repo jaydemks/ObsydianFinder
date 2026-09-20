@@ -48,6 +48,6 @@ python -m unittest discover -s tests -p "test_*.py"
 python -m PyInstaller --noconfirm Obsydian.spec
 ```
 
-The output is in `dist`. Distribute the complete directory or `.app`, including dynamic libraries and license files. The GitHub workflow archives this output. Browser integration tests in `tests/ui_webgl.py` and `tests/ui_applications.py` additionally need Selenium and Chrome; they use temporary fixtures and simulated uninstall actions.
+The output is in `dist`. Distribute the complete directory or `.app`, including dynamic libraries and license files. The GitHub workflow archives this output. Browser integration tests need `requirements-test.txt` and Chrome. The workflow checks folder navigation and the fallback without WebGL on Linux, then verifies the packaged native window on each operating system. Releases are uploaded only after all three builds pass. Tests use temporary fixtures; uninstall actions are simulated.
 
 The local Three.js bundle uses Three.js 0.180.0. To rebuild it, install `three@0.180.0` and `esbuild@0.25.10` under `.vendor-build`, then bundle `tools/vendor-entry.js` into `vendor/three.bundle.js` with esbuild. No CDN is required at runtime.

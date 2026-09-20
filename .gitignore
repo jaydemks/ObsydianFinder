@@ -34,3 +34,5 @@ tests/native-packaged*
 tests/native-debug*
 tests/native-*.png
 tests/native-*.json
+media/obsydian-demo/
+media/*.mp4

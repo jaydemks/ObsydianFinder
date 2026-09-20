@@ -30,6 +30,7 @@ with tempfile.TemporaryDirectory() as temporary:
         wait.until(lambda d: d.execute_script('return !!window.webglUnavailable'))
         assert driver.find_element(By.ID, 'view3d').get_attribute('disabled')
         assert driver.find_element(By.ID, 'list').is_displayed()
+        assert not driver.find_element(By.ID, 'universe').is_displayed()
         driver.find_element(By.ID, 'rootPath').send_keys(str(root))
         driver.find_element(By.ID, 'scanCustom').click()
         wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, '.list-row')) == 1)

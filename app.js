@@ -5,7 +5,7 @@ async function api(path,data){const r=await fetch('/api/'+path,{method:data?'POS
 let toastTimer;function toast(s){s=t(s);$('toast').textContent=s;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,6000)}
 function color(n){return n.isDir?'#9c87ff':/\.(png|jpg|jpeg|webp|gif|mp4|mov|mp3|wav|mkv|flac)$/i.test(n.name)?'#60d4d0':/\.(pdf|docx?|txt|md|xlsx?|csv|odt)$/i.test(n.name)?'#ffc888':'#8394bb'}
 async function loadDrives(){const {drives}=await api('drives');state.drives=drives;$('diskCount').textContent=drives.length;$('drives').replaceChildren();for(const d of drives){const b=document.createElement('button');b.className='disk';const name=document.createElement('strong');name.textContent='▱  '+t(d.label);const m=document.createElement('div');m.className='meter';const i=document.createElement('i');i.style.width=(100*(d.total-d.free)/d.total)+'%';m.append(i);const small=document.createElement('small');small.textContent=t('{free} free of {total}',{free:fmt(d.free),total:fmt(d.total)});b.append(name,m,small);b.onclick=()=>scan(d.path);$('drives').append(b)}}
-let polling=false,pollTimer=null,pollRequested=false,scanEpoch=0,starting=false,navigationGeneration=0,operationBusy=false;
+let polling=false,pollTimer=null,pollRequested=false,scanEpoch=0,starting=false,navigationGeneration=0,operationBusy=false,navigationPending=false,queuedNavigation=null;
 function busy(title){operationBusy=!!title;$('operationOverlay').hidden=!title;if(title)$('operationTitle').textContent=title;updateActionAvailability()}
 function updateActionAvailability(){
   if(typeof updateApplicationControls==='function')updateApplicationControls();
@@ -19,6 +19,7 @@ function updateActionAvailability(){
 async function scan(path){
   if(starting||state.running||operationBusy)return;
   if(!path)return toast(t("Enter the full path to a folder."));
+  if(transition)finishTransition();queuedNavigation=null;navigationPending=false;sceneMemory.clear();navigationFrames.clear();
   starting=true;++scanEpoch;updateActionAvailability();++searchGeneration;++navigationGeneration;clearTimeout(searchTimer);
   try{
     const result=await api('scan',{path,all:path==='@computer',includeSystem:$('includeSystem').checked});
@@ -59,14 +60,21 @@ function applyItems(items,count,label){for(const [path] of state.selection){cons
 }
 async function children(path,reset=true){
   if(!path)return;
-  const sceneSnapshot=reset?captureScene(path):null;if(reset){++searchGeneration;clearTimeout(searchTimer);$('search').value='';state.search=false;state.path=path}
+  if(transition){if(reset)queuedNavigation=path;return;}
+  if(!reset&&navigationPending)return;
+  if(reset){++searchGeneration;clearTimeout(searchTimer);$('search').value='';state.search=false}
   const generation=++navigationGeneration;
+  if(reset)navigationPending=true;
   try{const v=await api('children?path='+encodeURIComponent(path));if(generation!==navigationGeneration||state.search)return;
+    const sceneSnapshot=reset?captureScene(path):null;
+    if(sceneSnapshot?.folder&&!sceneSnapshot.folder.previewSignature){scenePreviews[path]={items:v.items.slice(0,8)};previewNodes(sceneSnapshot.folder,scenePreviews[path]);}
+    if(reset)prepareScene(sceneSnapshot);
     state.applicationsView=false;state.path=v.path;state.viewTotal=v.total;state.parent=v.parent;$('up').disabled=!v.parent;
     if(reset){state.selection.clear();yaw=0;pitch=.2;zoom=1;panX=panY=0;nodes=[];state.selected=null;$('selection').hidden=true;$('selectionEmpty').hidden=false}
     applyItems(v.items,v.count,v.path==='@computer'?t("Entire computer"):v.path);if(reset){transitionTo(sceneSnapshot);previewTime=0;refreshPreviews()}
-  }catch(e){if(generation===navigationGeneration)toast(e.message)}
+  }catch(e){if(generation===navigationGeneration)toast(e.message)}finally{if(generation===navigationGeneration)navigationPending=false}
 }
+window.addEventListener('scene-navigation-end',()=>{if(queuedNavigation){const path=queuedNavigation;queuedNavigation=null;queueMicrotask(()=>children(path));}});
 async function refreshSearch(){
   const q=$('search').value.trim(),generation=searchGeneration;if(!q)return;
   try{const r=await api('search?q='+encodeURIComponent(q));if(generation!==searchGeneration||!state.search)return;applyItems(r.items,r.count,t('Search: {query} · {count} results',{query:q,count:r.count}))}catch(e){toast(e.message)}

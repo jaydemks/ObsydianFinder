@@ -25,6 +25,12 @@ jobs:
       - run: python -m unittest discover -s tests -p "test_*.py"
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-keysyms1 libxcb-shape0 libxcb-icccm4 libnss3 libasound2t64 xvfb
+      - name: Check 3D navigation and graphics fallback
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install -r requirements-test.txt
+          python tests/ui_navigation.py
+          python tests/ui_fallback.py
       - run: python -m PyInstaller --noconfirm Obsydian.spec
       - name: Check native application
         if: runner.os != 'Linux'
@@ -70,7 +76,8 @@ jobs:
           test -s Obsydian-Windows.zip
           test -s Obsydian-macOS.zip
           test -s Obsydian-Linux.tar.gz
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "Obsydian Finder $GITHUB_REF_NAME" --notes "Native desktop builds verified on Windows, macOS and Linux."
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Obsydian Finder $GITHUB_REF_NAME" --notes "Native desktop builds verified on Windows, macOS and Linux."
           for file in Obsydian-*.zip Obsydian-*.tar.gz; do
             if [ -f "$file" ]; then gh release upload "$GITHUB_REF_NAME" "$file" --clobber; fi
           done
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest

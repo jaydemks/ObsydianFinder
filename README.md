@@ -24,6 +24,8 @@ Close the window to keep the app in the tray. Use **Quit Obsydian** in the windo
 
 Choose a drive, a folder or **Scan entire computer**. **Stop scan** preserves the results already found. Drag with the middle mouse button to pan, drag the background with the left button to orbit, and scroll to zoom. Double-click a folder to enter; **Up** returns to its parent.
 
+Transparent folder shells reveal their child bubbles. Entering and leaving keeps those children aligned, and returning restores your previous viewpoint.
+
 Right-click a bubble for actions. Ctrl/Command-click selects multiple items. Deletion moves files to the operating system trash after confirmation. Bubble size represents logical file size. Colors show drive usage or an item's share of its folder.
 
 Select an item to see reference arrows and their evidence. **Applications** shows discovered installations and declared components. Windows and supported Linux installations open their official removal tool; macOS reveals the application in Finder. Removal is never inferred from file connections.
