@@ -8,9 +8,17 @@ import tempfile
 import time
 import unittest
 import urllib.request
+from unittest.mock import patch
+from server import Handler, ThreadingHTTPServer
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_loopback_binding_does_not_require_dns(self):
+        with patch('socket.getfqdn', side_effect=AssertionError('Unexpected reverse DNS')):
+            with ThreadingHTTPServer(('127.0.0.1', 0), Handler) as service:
+                self.assertEqual(service.server_name, 'localhost')
+                self.assertGreater(service.server_port, 0)
+
     def test_single_instance_and_authenticated_shutdown(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
@@ -25,7 +33,12 @@ class LifecycleTests(unittest.TestCase):
                 deadline = time.monotonic() + 10
                 while not session.exists() and process.poll() is None and time.monotonic() < deadline:
                     time.sleep(.05)
-                self.assertTrue(session.exists(), 'Server did not create its session file')
+                if not session.exists():
+                    if process.poll() is None:
+                        process.terminate()
+                    _, errors = process.communicate(timeout=5)
+                    self.fail('Server did not create its session file; exit=%s; stderr=%s' %
+                              (process.returncode, errors.decode(errors='replace')))
                 data = json.loads(session.read_text(encoding='utf-8'))
                 duplicate = subprocess.run(command, capture_output=True, timeout=10, env=environment)
                 self.assertEqual(duplicate.returncode, 0, duplicate.stderr.decode(errors='replace'))

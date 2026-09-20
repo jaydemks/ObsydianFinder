@@ -169,12 +169,14 @@ def main():
             else:
                 hidden, restored = None, True
             def report(result):
+                if isinstance(result, str):
+                    result = json.loads(result)
                 result = result if isinstance(result, dict) else {}
                 Path(smoke).with_suffix('.json').write_text(json.dumps(dict(
                     webgl=bool(result.get('webgl')), ready=bool(result.get('ready')),
                     trayAvailable=tray, closeHides=hidden, restoreShows=restored)), encoding='utf-8')
                 window.quit_app()
-            window.web.page().runJavaScript("({webgl:typeof renderer !== 'undefined' && !!renderer.isWebGLRenderer,ready:typeof state !== 'undefined' && typeof scan === 'function' && typeof view === 'function' && !!document.getElementById('scanCustom')})", report)
+            window.web.page().runJavaScript("JSON.stringify({webgl:typeof renderer !== 'undefined' && !!renderer.isWebGLRenderer,ready:typeof state !== 'undefined' && typeof scan === 'function' && typeof view === 'function' && !!document.getElementById('scanCustom')})", report)
         window.web.loadFinished.connect(lambda ok: QTimer.singleShot(2000, capture))
         QTimer.singleShot(20000, window.quit_app)
     try:

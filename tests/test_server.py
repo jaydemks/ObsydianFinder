@@ -5,8 +5,7 @@ import http.client
 import threading
 from unittest.mock import patch
 from pathlib import Path
-from http.server import ThreadingHTTPServer
-from server import Store, Handler
+from server import Store, Handler, ThreadingHTTPServer
 
 
 class StoreTests(unittest.TestCase):
@@ -165,10 +164,12 @@ class StoreTests(unittest.TestCase):
         self.assertGreater(self.store.state['bytes'], 0)
         self.assertLess(self.store.state['files'], 223)
         self.assertTrue(self.store.children(str(self.root))['partial'])
-        self.store.action(dict(action='rename', path=str(self.root / 'a.txt'), name='new.txt'))
+        indexed_file = next(item for item in self.store.children(str(self.root))['items']
+                            if not item['isDir'])
+        self.store.action(dict(action='rename', path=indexed_file['path'], name='new.txt'))
         self.assertFalse(self.store.state['running'])
         with self.assertRaises(ValueError):
-            self.store.duplicates(str(self.root / 'a.txt'))
+            self.store.duplicates(indexed_file['path'])
 
     def test_incremental_move_and_external_removal_do_not_rescan(self):
         with patch.object(self.store, 'start', side_effect=AssertionError('Unexpected full scan')):

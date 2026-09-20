@@ -15,6 +15,11 @@ def fetch(name):
 def main():
     index = fetch('qtwebengine-licensing.html')
     names = sorted(set(re.findall(r'href="(qtwebengine-3rdparty[^"#]+\.html)', index)))
+    qt_index = fetch('licenses-used-in-qt.html')
+    qt_names = set(re.findall(r'href="([^"]*attribution[^"#]*\.html)', qt_index))
+    modules = ('qt-attribution-', 'qtcore-', 'qtgui-', 'qtnetwork-', 'qtqml-', 'qtquick-',
+               'qtwebchannel-', 'qtpositioning-', 'qtshadertools-', 'qtimageformats-', 'qtsvg-', 'qtdbus-')
+    names = sorted(set(names) | {name for name in qt_names if name.startswith(modules)})
     target = ROOT / 'QtWebEngine-components'
     target.mkdir(parents=True, exist_ok=True)
     def save(name):
@@ -35,7 +40,7 @@ def main():
         items = list(pool.map(save, names))
     links = ''.join('<li><a href="QtWebEngine-components/'+name+'">'+html.escape(title)+'</a></li>' for name,title in items)
     (ROOT / 'Chromium-CREDITS.html').write_text('<!doctype html><meta charset="utf-8"><title>Qt WebEngine component licenses</title>'
-       '<h1>Qt WebEngine 6.11.2 — Chromium component licenses</h1><p>Official component notices from '
+       '<h1>Qt 6.11.2 and Chromium component licenses</h1><p>Official component notices from '
        '<a href="'+BASE+'qtwebengine-licensing.html">Qt WebEngine licensing</a>. These local pages are included for offline access.</p><ul>'+links+'</ul>', encoding='utf-8')
     print('Saved', len(items), 'component license pages.')
 

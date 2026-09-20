@@ -20,7 +20,7 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -p "test_*.py"
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon-x11-0 libxcb-cursor0 libnss3 libasound2t64 xvfb
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-keysyms1 libxcb-shape0 libxcb-icccm4 libnss3 libasound2t64 xvfb
       - run: python -m PyInstaller --noconfirm Obsydian.spec
       - name: Check native application
         if: runner.os != 'Linux'

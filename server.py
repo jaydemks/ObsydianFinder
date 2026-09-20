@@ -15,7 +15,8 @@ import threading
 import time
 import urllib.parse
 import webbrowser
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer as _ThreadingHTTPServer
+from socketserver import TCPServer
 from references import ReferenceIndex
 from apps import ApplicationCatalog
 from launch import current as current_instance, instance_lock, save_session, version, SESSION
@@ -25,6 +26,14 @@ APP_VERSION = version()
 SYSTEM_NAMES = {'$recycle.bin', 'system volume information', 'windows', 'program files',
                 'program files (x86)', 'programdata', 'recovery', '.trash', '.trashes',
                 'lost+found', 'proc', 'sys', 'dev'}
+
+class ThreadingHTTPServer(_ThreadingHTTPServer):
+    def server_bind(self):
+        # This service uses a numeric loopback URL; reverse DNS is unnecessary
+        # and can delay local startup when the machine's resolver is unavailable.
+        TCPServer.server_bind(self)
+        self.server_name = 'localhost'
+        self.server_port = self.server_address[1]
 
 def protected(path):
     return any(part.casefold() in SYSTEM_NAMES for part in Path(path).parts)

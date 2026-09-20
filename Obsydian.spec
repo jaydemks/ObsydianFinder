@@ -46,4 +46,4 @@ coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='Obsydian 
 if sys.platform == 'darwin':
     app = BUNDLE(coll, name='Obsydian Finder.app', icon=str(icon) if icon.exists() else None,
                  bundle_identifier='app.obsydian.finder',
-                 info_plist={'NSHighResolutionCapable': True, 'CFBundleShortVersionString': '0.5.0'})
+                 info_plist={'NSHighResolutionCapable': True, 'CFBundleShortVersionString': '0.5.1'})
