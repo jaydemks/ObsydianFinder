@@ -1,20 +1,24 @@
 name: Desktop builds
 permissions:
-  contents: write
+  contents: read
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [main]
 jobs:
   build:
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.11'
       - run: python -m pip install -r requirements.txt
@@ -38,19 +42,35 @@ jobs:
               shutil.make_archive('Obsydian-Windows','zip','dist','Obsydian Finder')
           else:
               shutil.make_archive('Obsydian-Linux','gztar','dist','Obsydian Finder')
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: Obsydian-${{ runner.os }}
+          retention-days: 7
+          compression-level: 0
           path: |
             Obsydian-*.zip
             Obsydian-*.tar.gz
-      - name: Publish release downloads
-        if: startsWith(github.ref, 'refs/tags/')
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: Obsydian-*
+          merge-multiple: true
+      - name: Publish verified downloads
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Obsydian Finder $GITHUB_REF_NAME" --notes "Native desktop builds for Windows, macOS and Linux." || gh release view "$GITHUB_REF_NAME"
+          test -s Obsydian-Windows.zip
+          test -s Obsydian-macOS.zip
+          test -s Obsydian-Linux.tar.gz
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "Obsydian Finder $GITHUB_REF_NAME" --notes "Native desktop builds verified on Windows, macOS and Linux."
           for file in Obsydian-*.zip Obsydian-*.tar.gz; do
             if [ -f "$file" ]; then gh release upload "$GITHUB_REF_NAME" "$file" --clobber; fi
           done

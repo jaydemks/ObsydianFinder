@@ -2,6 +2,8 @@
 
 # Obsydian Finder
 
+[![Desktop builds](https://github.com/jaydemks/ObsydianFinder/actions/workflows/desktop-build.yml/badge.svg?branch=main)](https://github.com/jaydemks/ObsydianFinder/actions/workflows/desktop-build.yml)
+
 Explore disk space in a native desktop window. A real 3D scene shows files, folders, installed applications and the connections the scanner can verify. Scans and reference indexing appear progressively. English is the default; Italian is available.
 
 The screenshot uses demonstration files. Everything runs locally.
